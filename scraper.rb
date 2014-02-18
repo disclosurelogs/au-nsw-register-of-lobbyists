@@ -1,3 +1,4 @@
+require 'scraperwiki'
 require 'pdf-reader'   
 require 'open-uri'
 require 'yaml'

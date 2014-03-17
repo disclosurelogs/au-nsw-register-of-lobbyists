@@ -47,7 +47,7 @@ urls.each do |url|
            if lineparts.length == 2
                lobbyist_firm["last_updated"] = lineparts[1]
            end
-       when /:( |)/, "Client Details", "Owner Details", "Details of all persons or employees who conduct lobbying activities", "Details last updated:"
+       when /:( |)/, /Client Details/, "Owner Details", "Details of all persons or employees who conduct lobbying activities", "Details last updated:"
          #puts "Loading header: #{line}"
          lines << line
        else
@@ -84,7 +84,7 @@ urls.each do |url|
          in_employees = true
          in_clients = false
          in_owners = false
-       when "Client Details"
+       when /Client Details/
          in_employees = false
          in_clients = true
          in_owners = false
@@ -123,7 +123,7 @@ urls.each do |url|
          lobbyist["clients"] << { "lobbyist_firm_name" => lobbyist_firm["business_name"],"lobbyist_firm_abn" => lobbyist_firm["abn"], "name" =>"Ernst & Young"}
          lobbyist["clients"] << { "lobbyist_firm_name" => lobbyist_firm["business_name"],"lobbyist_firm_abn" => lobbyist_firm["abn"], "name" =>"KPMG"}
          lobbyist["clients"] << { "lobbyist_firm_name" => lobbyist_firm["business_name"],"lobbyist_firm_abn" => lobbyist_firm["abn"], "name" =>"PricewaterhouseCoopers"}
-       when /Owner Details Adelaide/,/Please see the following page for owner detail/
+       when /Owner Details Adelaide/,/Please see the following page for owner detail/,/Please see the following 13 pages for owner details/
            break; #KPMG have pages and pages of owners
        when /Name:/
            name_next = true

@@ -40,7 +40,7 @@ urls.each do |url|
       line = line.strip()
       lineno = lineno + 1
       case line
-       when "", "View Lobbyist Details", "Lobbyist Details"
+       when "", "\View Lobbyist Details", "View Lobbyist Details", "Lobbyist Details"
        when /(.*)Details last updated\:(.*)/
            #special case
            lineparts = line.split("Details last updated\:")

@@ -52,7 +52,9 @@ urls.each do |url|
          lines << line
        else
          #puts "Loading line: #{line}"
-         lines[-1] += " " + line
+         if lines[-1] 
+           lines[-1] += " " + line
+         end
       end
      end
    end

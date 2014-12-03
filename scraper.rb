@@ -5,7 +5,7 @@ require 'open-uri'
 
 
 
-html = ScraperWiki.scrape("http://www.dpc.nsw.gov.au/programs_and_services/lobbyist_register/who_is_on_register")
+html = ScraperWiki.scrape("http://www.lobbyists.elections.nsw.gov.au/whoisontheregister")
 
 # Next we use Nokogiri to extract the values from the HTML source.
 

@@ -1,4 +1,6 @@
 require 'scraperwiki'
+ScraperWiki.sqliteexecute('DROP TABLE IF EXISTS swvariables');
+ScraperWiki.sqliteexecute("DELETE FROM lobbyist_firms where abn like '% %'");
 require 'yaml'
 require 'openssl'
 class Array
@@ -56,11 +58,11 @@ for tr in page.at('tbody').search('tr')
   end
   entityname = row_data['Entity Name']
 
-  companyABN = row_data['ABN']
+  companyABN = row_data['ABN'].gsub(' ','')
   companyName = row_data['Entity Name']
   lobbyist_firm["business_name"] = companyName
   lobbyist_firm["trading_name"] = row_data['Trading Name']
-  lobbyist_firm["abn"] = companyABN
+  lobbyist_firm["abn"] = companyABN.gsub(' ','')
   lobbyist_firm["last_updated"] = ""
   lobbyist_firm["status"] = row_data['Status']
   lobbyist_firm["registration_begins"] = row_data["Registration Begins"]

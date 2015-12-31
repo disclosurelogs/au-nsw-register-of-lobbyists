@@ -1,6 +1,12 @@
 require 'scraperwiki'
+=begin
 ScraperWiki.sqliteexecute('DROP TABLE IF EXISTS swvariables');
 ScraperWiki.sqliteexecute("DELETE FROM lobbyist_firms where abn like '% %'");
+ScraperWiki.sqliteexecute("DELETE FROM lobbyists where lobbyist_firm_abn like '% %'");
+ScraperWiki.sqliteexecute("DELETE FROM lobbyist_firm_owners where lobbyist_firm_abn like '% %'");
+ScraperWiki.sqliteexecute("DELETE FROM lobbyist_clients where lobbyist_firm_abn like '% %'");
+=end
+
 require 'yaml'
 require 'openssl'
 class Array
@@ -11,7 +17,7 @@ end
 require 'net/https'
 require 'uri'
 
-html = "" #open("LobbyExport.html")
+html = ''#open("LobbyExport.html")
 uri = URI.parse("http://www.lobbyists.elections.nsw.gov.au")
 http = Net::HTTP.new(uri.host, uri.port)
 http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
@@ -46,10 +52,10 @@ for tr in page.at('tbody').search('tr')
   if entityname != row_data['Entity Name'] and entityname != ''
     puts entityname
     #save last
-    ScraperWiki.save(unique_keys=["name", "lobbyist_firm_abn"], data=employees, table_name="lobbyists")
-    ScraperWiki.save(unique_keys=["name", "lobbyist_firm_abn"], data=clients, table_name="lobbyist_clients")
-    ScraperWiki.save(unique_keys=["name", "lobbyist_firm_abn"], data=owners, table_name="lobbyist_firm_owners")
-    ScraperWiki.save(unique_keys=["business_name", "abn"], data=lobbyist_firm, table_name="lobbyist_firms")
+    ScraperWiki.save(["name", "lobbyist_firm_abn"], employees, "lobbyists")
+    ScraperWiki.save(["name", "lobbyist_firm_abn"], clients, "lobbyist_clients")
+    ScraperWiki.save(["name", "lobbyist_firm_abn"], owners, "lobbyist_firm_owners")
+    ScraperWiki.save(["business_name", "abn"], lobbyist_firm, "lobbyist_firms")
 
     # reset for next lobbyist
     employees = []
@@ -59,12 +65,11 @@ for tr in page.at('tbody').search('tr')
   end
   entityname = row_data['Entity Name']
 
-  companyABN = row_data['ABN'].gsub(' ','')
-  companyName = row_data['Entity Name']
-  lobbyist_firm["business_name"] = companyName
-  lobbyist_firm["trading_name"] = row_data['Trading Name']
-  lobbyist_firm["abn"] = companyABN.gsub(' ','')
-  lobbyist_firm["last_updated"] = ""
+  companyABN = row_data['ABN'].gsub(' ','').strip()
+  companyName = row_data['Entity Name'].strip()
+  lobbyist_firm["business_name"] = companyName.strip()
+  lobbyist_firm["trading_name"] = row_data['Trading Name'].strip()
+  lobbyist_firm["abn"] = companyABN.gsub(' ','').strip()
   lobbyist_firm["status"] = row_data['Status']
   lobbyist_firm["registration_begins"] = row_data["Registration Begins"]
   lobbyist_firm["registration_ends"] = row_data["Registration Ends"]
@@ -79,7 +84,7 @@ for tr in page.at('tbody').search('tr')
   end
 end
 
-ScraperWiki.save(unique_keys=["name", "lobbyist_firm_abn"], data=employees, table_name="lobbyists")
-ScraperWiki.save(unique_keys=["name", "lobbyist_firm_abn"], data=clients, table_name="lobbyist_clients")
-ScraperWiki.save(unique_keys=["name", "lobbyist_firm_abn"], data=owners, table_name="lobbyist_firm_owners")
-ScraperWiki.save(unique_keys=["business_name", "abn"], data=lobbyist_firm, table_name="lobbyist_firms")
+ScraperWiki.save(["name", "lobbyist_firm_abn"], employees, "lobbyists")
+ScraperWiki.save(["name", "lobbyist_firm_abn"], clients, "lobbyist_clients")
+ScraperWiki.save(["name", "lobbyist_firm_abn"], owners, "lobbyist_firm_owners")
+ScraperWiki.save(["business_name", "abn"], lobbyist_firm, "lobbyist_firms")

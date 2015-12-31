@@ -41,9 +41,10 @@ for tr in page.at('tbody').search('tr')
   for value in values
     row_data[value[0]] = value[1]
   end
-  puts row_data
+  #puts row_data
 
   if entityname != row_data['Entity Name'] and entityname != ''
+    puts entityname
     #save last
     ScraperWiki.save(unique_keys=["name", "lobbyist_firm_abn"], data=employees, table_name="lobbyists")
     ScraperWiki.save(unique_keys=["name", "lobbyist_firm_abn"], data=clients, table_name="lobbyist_clients")

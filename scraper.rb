@@ -16,75 +16,105 @@ class Array
 end
 require 'net/https'
 require 'uri'
-
-html = ''#open("LobbyExport.html")
-uri = URI.parse("http://www.lobbyists.elections.nsw.gov.au")
+require 'httpclient'
+require 'nokogiri'
+html = ''
+# html = open("LobbyExport.html")
+uri = URI.parse("http://lobbyists.elections.nsw.gov.au")
 http = Net::HTTP.new(uri.host, uri.port)
-http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
+http.use_ssl = true if uri.scheme == "https" # enable SSL/TLS
 http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 http.start {
-  http.request_get("/LobbyExportXLS") {|res|
+  http.request_get("/whoisontheregister") {|res|
     html = res.body
   }
 }
 
-# Next we use Nokogiri to extract the values from the HTML source.
 
-require 'nokogiri'
 page = Nokogiri::HTML(html)
-headers = page.search('th').map { |a| a.text }
-entityname = ""
+viewstate = Hash[page.search('#ajax-view-state input').map {|input|
+  [input['id'], input['value']]
+}]
+lobby_pages = page.search('#tableSort2 tbody tr').map {
+    |a|
+  {"entity_name" => a.children[1].text.strip,
+   "onclick" => a.children[1].search('a')[0]['onclick'],
+   "abn" => a.children[3].text.strip,
+   "business_trading_name" => a.children[5].text.strip
+  }
+}
 
 employees = []
 clients = []
 owners = []
 lobbyist_firm = {}
 
-for tr in page.at('tbody').search('tr')
-  #thanks http://ponderer.org/download/xpath/ and http://www.zvon.org/xxl/XPathTutorial/Output/
-  values = headers.zip(tr.search('td').map { |a| a.text })
-  row_data = {}
-  for value in values
-    row_data[value[0]] = value[1]
-  end
-  #puts row_data
+for lobby_page in lobby_pages
 
-  if entityname != row_data['Entity Name'] and entityname != ''
-    puts entityname
-    #save last
-    ScraperWiki.save(["name", "lobbyist_firm_abn"], employees, "lobbyists")
-    ScraperWiki.save(["name", "lobbyist_firm_abn"], clients, "lobbyist_clients")
-    ScraperWiki.save(["name", "lobbyist_firm_abn"], owners, "lobbyist_firm_owners")
-    ScraperWiki.save(["business_name", "abn"], lobbyist_firm, "lobbyist_firms")
+  clnt = HTTPClient.new
+  body = viewstate
+  body['AJAXREQUEST'] = '_viewRoot'
+  body['j_id0:j_id18'] = 'j_id0:j_id18'
+  body['j_id0:j_id18:j_id19'] = 'j_id0:j_id18:j_id19'
+  body['selectedLobbyistId'] = lobby_page["onclick"].scan(/showLobbyDetails\('(.*)',/).last
+  res = clnt.post('http://lobbyists.elections.nsw.gov.au/whoisontheregister',
+                  :header => {"Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8",
+                              "Cookie" => "__lc.visitor_id.6733631=S1497238304.65f7e84d1a; _ga-40a4f9d5-9a14-4c81-84d3-cde94954f681=GA1.3.2021345887.1494501674; _ga=GA1.3.678169014.1536405576; lc_sso6733631=1551252750808; visid_incap_926237=ALOPetHWSQKmkbGLEMHc0U1nhFwAAAAAQUIPAAAAAAAAguMgvjKZBdvRS7EFJsec; incap_ses_436_926237=+42faBmGXUgDDDNH9PwMBk1nhFwAAAAAvtU5wyhKNduN/RNBesNCJA==; nlbi_926237=/kOsPiPuR3sT9aW+3u68CgAAAAD871cCjAhVTGyhl33Wuql3; ARRAffinity=f85d483a955d896c6afae747cc2e80b0f74d769cf16104897c7518ccab661a66; incap_ses_971_926237=m6s7F1RZC1qWizOq9K95DV1phFwAAAAAK29EoKpoN2dLookyuOrbLA=="},
+                  :body => body
+  )
+  html = res.body
+  # html = open("test2.html")
+  page = Nokogiri::HTML(html)
 
-    # reset for next lobbyist
-    employees = []
-    clients = []
-    owners = []
-    lobbyist_firm = {}
-  end
-  entityname = row_data['Entity Name']
 
-  companyABN = row_data['ABN'].gsub(' ','').strip()
-  companyName = row_data['Entity Name'].strip()
-  lobbyist_firm["business_name"] = companyName.strip()
-  lobbyist_firm["trading_name"] = row_data['Trading Name'].strip()
-  lobbyist_firm["abn"] = companyABN.gsub(' ','').strip()
-  lobbyist_firm["status"] = row_data['Status']
-  lobbyist_firm["registration_begins"] = row_data["Registration Begins"]
-  lobbyist_firm["registration_ends"] = row_data["Registration Ends"]
-  if row_data["Contact Type"] == "Client"
-    clients << {"lobbyist_firm_name" => lobbyist_firm["business_name"], "lobbyist_firm_abn" => lobbyist_firm["abn"], "name" => row_data["Contact Name"]}
-  elsif row_data["Contact Type"] == "Employee"
-    employees << {"lobbyist_firm_name" => lobbyist_firm["business_name"], "lobbyist_firm_abn" => lobbyist_firm["abn"], "name" => row_data["Contact Name"]}
-  elsif row_data["Contact Type"] == "Owner"
-    owners << {"lobbyist_firm_name" => lobbyist_firm["business_name"], "lobbyist_firm_abn" => lobbyist_firm["abn"], "name" => row_data["Contact Name"]}
-  else
-    puts "error unknown contact type: "+data.to_yaml
+  lobbyist_firm["business_name"] = lobby_page['entity_name'].strip()
+  puts lobbyist_firm["business_name"]
+  lobbyist_firm["trading_name"] = lobby_page['business_trading_name'].strip()
+  lobbyist_firm["abn"] = lobby_page['abn'].gsub(' ', '').strip()
+
+  lobtab = page.search('.tableSort').first.at('tbody').children
+
+
+  # lobbyist_firm["status"] = lobtab[9].at('td').children[1].text.strip
+  # lobbyist_firm["last_updated"] = lobtab[5].at('td').children[1].text.strip
+
+  if page.at('#lobTab2')
+    lobtab_client = page.at('#lobTab2').at('tbody').search('tr')
+    for client in lobtab_client
+      client_data = client.search("td")
+      clients << {"lobbyist_firm_name" => lobbyist_firm["business_name"], "lobbyist_firm_abn" => lobbyist_firm["abn"],
+                  "name" => client_data[0].text, "abn" => client_data[1].text.gsub(' ', '').strip(), "added_date" => client_data[3].text}
+    end
   end
+
+  if page.at('#lobTab3')
+    lobtab_employee = page.at('#lobTab3').at('tbody').search('tr')
+    for employee in lobtab_employee
+      employee_data = employee.search("td")
+      employees << {"lobbyist_firm_name" => lobbyist_firm["business_name"], "lobbyist_firm_abn" => lobbyist_firm["abn"],
+                    "name" => employee_data[0].text, "position" => employee_data[1].text, "added_date" => employee_data[3].text}
+    end
+  end
+
+  if page.at('#lobTab4')
+    lobtab_owner = page.at('#lobTab4').at('tbody').search('tr')
+    for owner in lobtab_owner
+      owner_data = owner.search("td")
+      owners << {"lobbyist_firm_name" => lobbyist_firm["business_name"], "lobbyist_firm_abn" => lobbyist_firm["abn"],
+                 "name" => owner_data[0].text, "added_date" => owner_data[2].text}
+    end
+  end
+
+
+  # save results
+  ScraperWiki.save(["name", "lobbyist_firm_abn"], employees, "lobbyists")
+  ScraperWiki.save(["name", "lobbyist_firm_abn"], clients, "lobbyist_clients")
+  ScraperWiki.save(["name", "lobbyist_firm_abn"], owners, "lobbyist_firm_owners")
+  ScraperWiki.save(["business_name", "abn"], lobbyist_firm, "lobbyist_firms")
+
+  # reset for next lobbyist
+  employees = []
+  clients = []
+  owners = []
+  lobbyist_firm = {}
 end
-
-ScraperWiki.save(["name", "lobbyist_firm_abn"], employees, "lobbyists")
-ScraperWiki.save(["name", "lobbyist_firm_abn"], clients, "lobbyist_clients")
-ScraperWiki.save(["name", "lobbyist_firm_abn"], owners, "lobbyist_firm_owners")
-ScraperWiki.save(["business_name", "abn"], lobbyist_firm, "lobbyist_firms")

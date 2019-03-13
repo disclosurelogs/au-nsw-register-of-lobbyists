@@ -62,7 +62,6 @@ for lobby_page in lobby_pages
                   :body => body
   )
   html = res.body
-  puts html
   # html = open("test2.html")
   page = Nokogiri::HTML(html)
 
@@ -72,10 +71,8 @@ for lobby_page in lobby_pages
   lobbyist_firm["trading_name"] = lobby_page['business_trading_name'].strip()
   lobbyist_firm["abn"] = lobby_page['abn'].gsub(' ', '').strip()
 
-  # lobtab = page.search('.tableSort').first.at('tbody').children
-
-  # lobbyist_firm["status"] = lobtab[9].at('td').children[1].text.strip
-  # lobbyist_firm["last_updated"] = lobtab[5].at('td').children[1].text.strip
+  lobbyist_firm["status"] = page.search('.tableSort')[0].at('tbody').search('td')[3].children[1]
+  lobbyist_firm["last_updated"] = page.search('.tableSort')[0].at('tbody').search('td')[4].children[1]
 
   if page.at('#lobTab2')
     lobtab_client = page.at('#lobTab2').at('tbody').search('tr')

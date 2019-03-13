@@ -58,8 +58,7 @@ for lobby_page in lobby_pages
   body['j_id0:j_id18:j_id19'] = 'j_id0:j_id18:j_id19'
   body['selectedLobbyistId'] = lobby_page["onclick"].scan(/showLobbyDetails\('(.*)',/).last
   res = clnt.post('http://lobbyists.elections.nsw.gov.au/whoisontheregister',
-                  :header => {"Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8",
-                              "Cookie" => "__lc.visitor_id.6733631=S1497238304.65f7e84d1a; _ga-40a4f9d5-9a14-4c81-84d3-cde94954f681=GA1.3.2021345887.1494501674; _ga=GA1.3.678169014.1536405576; lc_sso6733631=1551252750808; visid_incap_926237=ALOPetHWSQKmkbGLEMHc0U1nhFwAAAAAQUIPAAAAAAAAguMgvjKZBdvRS7EFJsec; incap_ses_436_926237=+42faBmGXUgDDDNH9PwMBk1nhFwAAAAAvtU5wyhKNduN/RNBesNCJA==; nlbi_926237=/kOsPiPuR3sT9aW+3u68CgAAAAD871cCjAhVTGyhl33Wuql3; ARRAffinity=f85d483a955d896c6afae747cc2e80b0f74d769cf16104897c7518ccab661a66; incap_ses_971_926237=m6s7F1RZC1qWizOq9K95DV1phFwAAAAAK29EoKpoN2dLookyuOrbLA=="},
+                  :header => {"Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"},
                   :body => body
   )
   html = res.body

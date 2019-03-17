@@ -71,8 +71,8 @@ for lobby_page in lobby_pages
   lobbyist_firm["trading_name"] = lobby_page['business_trading_name'].strip()
   lobbyist_firm["abn"] = lobby_page['abn'].gsub(' ', '').strip()
 
-  lobbyist_firm["status"] = page.search('.tableSort')[0].at('tbody').search('td')[3].children[1]
-  lobbyist_firm["last_updated"] = page.search('.tableSort')[0].at('tbody').search('td')[4].children[1]
+  lobbyist_firm["status"] = page.search('.tableSort')[0].at('tbody').search('td')[3].children[1].text
+  lobbyist_firm["last_updated"] = page.search('.tableSort')[0].at('tbody').search('td')[4].children[1].text
 
   if page.at('#lobTab2')
     lobtab_client = page.at('#lobTab2').at('tbody').search('tr')
